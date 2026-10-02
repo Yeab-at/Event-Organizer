@@ -255,7 +255,7 @@ BEGIN
     ORDER BY counter DESC;
 END;
 $$;
-Drop PROCEDURE pay(input_Event_Id INT, input_Payment_Amount NUMERIC(10, 2), input_Payment_Date DATE, input_Payment_Status VARCHAR)
+
 CREATE OR REPLACE PROCEDURE pay(input_Event_Id INT, input_Payment_Amount NUMERIC(10, 2), input_Payment_Date DATE, input_Payment_Status VARCHAR)
 LANGUAGE plpgsql
 AS $$
@@ -357,7 +357,7 @@ AS $$
 BEGIN
     UPDATE Venue
     SET
-        Vend_Name = Input_Venue_Name,
+        Venue_Name = Input_Venue_Name,
         Venue_Type = Input_Venue_Type,
         Venue_Phone_Number = Input_Venue_Phone_Number,
         Venue_Email = Input_Venue_Email,
@@ -370,8 +370,6 @@ BEGIN
 END;
 $$;
 
-
-
 CREATE OR REPLACE FUNCTION JOIN_EVENT(input_client_id INT)
 RETURNS TABLE(
 client_id INT,
@@ -380,7 +378,6 @@ Event_name VARCHAR,
 Event_date DATE,
 Event_time TIME,
 Event_location VARCHAR, 
-Event_description VARCHAR,
 Event_type VARCHAR,
 Venue_name VARCHAR,
 Venue_Price NUMERIC(10, 2),
@@ -413,34 +410,30 @@ WHERE Client.client_id=input_client_id;
 END;
 $$;
 
-Drop function Calculate_Venue_Cost(input_client_id INT)
-Select Calculate_venue_cost(1)
 CREATE OR REPLACE FUNCTION Calculate_Venue_Cost(input_client_id INT)
 RETURNS TABLE
 (Client_id INT,
 client_Full_Name VARCHAR,
 Venue_name VARCHAR,
-Venue_Price NUMERIC(10, 2)
-)
+Venue_Price NUMERIC(10, 2))
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-	RETURN QUERY 
+	RETURN QUERY
 	SELECT
-		Client.client_id ,
-		Client.client_First_Name || ' ' || Client.Client_Last_Name AS client_Full_Name,
-		Venue.Venue_name ,
+		Client.client_id,
+		Client.client_First_Name || ' ' || Client.client_Last_Name AS client_Full_Name,
+		Venue.Venue_name,
 		Venue.Venue_Price
 	FROM Client
-	INNER JOIN EventVenue ON Client.Client_id=EventVenue.Client_id
-	INNER JOIN Venue ON Venue.venue_id=eventVenue.venue_id
-	WHERE Client.client_id=input_client_id;
+	INNER JOIN Event ON Client.client_id = Event.client_id
+	INNER JOIN EventVenue ON Event.event_id = EventVenue.event_id
+	INNER JOIN Venue ON Venue.venue_id = EventVenue.venue_id
+	WHERE Client.client_id = input_client_id;
 END;
 $$
 
-Select Vendors_Cost(1)
-Drop function Vendors_Cost(input_client_id INT)
-CREATE OR REPLACE FUNCTION Vendors_Cost(input_client_id INT)
+CREATE OR REPLACE FUNCTION Calculate_Vendor_Cost(input_client_id INT)
 RETURNS TABLE
 (Client_id INT,
 client_Full_Name VARCHAR,
@@ -452,18 +445,18 @@ BEGIN
 	RETURN QUERY
 	SELECT
 		Client.client_id,
-		Client.client_First_Name || ' ' || Client.Client_Last_Name AS client_Full_Name,
+		Client.client_First_Name || ' ' || Client.client_Last_Name AS client_Full_Name,
 		Vendors.Vendor_name,
 		Vendors.Vendor_Price
 	FROM Client
-	INNER JOIN EventVendors ON Client.Client_id=EventVendors.Client_id
-	INNER JOIN Vendors ON Vendors.vendor_id=eventVendors.vendor_id
-	WHERE Client.client_id=input_client_id;
+	INNER JOIN Event ON Client.client_id = Event.client_id
+	INNER JOIN EventVendors ON Event.event_id = EventVendors.event_id
+	INNER JOIN Vendors ON Vendors.vendor_id = EventVendors.vendor_id
+	WHERE Client.client_id = input_client_id;
 END;
 $$
 
-select Vendors_With_Total(1)
-drop  FUNCTION Vendors_With_Total(input_client_id INT)
+
 CREATE OR REPLACE FUNCTION Vendors_With_Total(input_client_id INT)
 RETURNS TABLE
 (Client_id INT,
@@ -490,7 +483,6 @@ BEGIN
 END;
 $$;
 
-select TOTAL_EVENT_COST(1)
 CREATE OR REPLACE FUNCTION TOTAL_EVENT_COST(input_client_id INT)
 RETURNS TABLE(
 	Client_id INT,
@@ -512,203 +504,6 @@ BEGIN
 	INNER JOIN Client ON Vendors_With_Total.client_id = Client.Client_id;
 END;
 $$;
-
-
-
-
---LES INSERTS
-CALL IntoClient(
-    'Abel',
-    'Tesfaye',
-    '0911234567',
-    'abel@gmail.com'
-);
-
-CALL IntoClient(
-    'Sara',
-    'Bekele',
-    '0922345678',
-    'sara@gmail.com'
-);
-
-CALL IntoClient(
-    'Daniel',
-    'Mekonnen',
-    '0933456789',
-    'daniel@gmail.com'
-);
-
-CALL IntoClient(
-    'Hana',
-    'Solomon',
-    '0944567890',
-    'hana@gmail.com'
-);
-
-CALL IntoClient(
-    'Michael',
-    'Alemayehu',
-    '0955678901',
-    'michael@gmail.com'
-);
-
-SELECT * FROM Client;
-
-CALL IntoVendor(
-    'Elegant Catering',
-    'Catering',
-    '0911111111',
-    'elegantcatering@gmail.com',
-    '15000'::NUMERIC
-);
-
-CALL IntoVendor(
-    'Golden Photography',
-    'Photography',
-    '0922222222',
-    'goldenphoto@gmail.com',
-    '10000'::NUMERIC
-);
-
-CALL IntoVendor(
-    'Dream Decorations',
-    'Decoration',
-    '0933333333',
-    'dreamdecor@gmail.com',
-    '8000'::NUMERIC
-);
-
-CALL IntoVendor(
-    'Addis DJ Services',
-    'Entertainment',
-    '0944444444',
-    'addisdj@gmail.com',
-    '5000'::NUMERIC
-);
-
-CALL IntoVendor(
-    'Sweet Moments Bakery',
-    'Cake',
-    '0955555555',
-    'sweetmoments@gmail.com',
-    '6000'::NUMERIC
-);
-
-CALL IntoVendor(
-    'Perfect Events Catering',
-    'Catering',
-    '0966666666',
-    'perfectevents@gmail.com',
-    '18000'::NUMERIC
-);
-
-SELECT * FROM Vendors;
-
-CALL IntoVenue(
-    'Skylight Ballroom',
-    'Bole, Addis Ababa',
-    '0910101010',
-    'skylight@gmail.com',
-    '50000'::NUMERIC
-);
-
-CALL IntoVenue(
-    'Harmony Hall',
-    'Kazanchis, Addis Ababa',
-    '0920202020',
-    'harmony@gmail.com',
-    '30000'::NUMERIC
-);
-
-CALL IntoVenue(
-    'Unity Garden Venue',
-    'Meskel Square, Addis Ababa',
-    '0930303030',
-    'unitygarden@gmail.com',
-    '25000'::NUMERIC
-);
-
-CALL IntoVenue(
-    'Sunset Resort',
-    'Entoto, Addis Ababa',
-    '0940404040',
-    'sunset@gmail.com',
-    '40000'::NUMERIC
-);
-select * from Eventtable
-INSERT INTO EventTable (Client_Id, Event_Name,Event_type, Event_Date,Event_Time,Number_Of_Guests,Event_Status)
-VALUES
-(1, 'Abel Wedding','Wedding', '2026-12-10', '18:00:00', 100, 'Planned'),
-(2, 'Sara Birthday Party', 'Birthday', '2026-11-15', '14:00:00', 50, 'Confirmed'),
-(3, 'Daniel Graduation', 'Graduation', '2026-10-20', '16:00:00', 80, 'Planned'),
-(4, 'Hana Engagement Party', 'Engagement', '2026-12-25', '19:00:00', 60, 'Confirmed'),
-(5, 'Michael Corporate Event', 'Corporate', '2027-01-10', '10:00:00', 120, 'Confirmed');
-
-CALL IntoEvent_Vendors(2, 1);
-CALL IntoEvent_Vendors(2, 2);
-CALL IntoEvent_Vendors(2, 3);
-
-CALL IntoEvent_Vendors(3, 1);
-CALL IntoEvent_Vendors(3, 4);
-
-CALL IntoEvent_Vendors(4, 2);
-CALL IntoEvent_Vendors(4, 5);
-
-CALL IntoEvent_Vendors(5, 1);
-CALL IntoEvent_Vendors(5, 3);
-CALL IntoEvent_Vendors(5, 5);
-
-CALL IntoEvent_Vendors(6, 1);
-CALL IntoEvent_Vendors(6, 2);
-CALL IntoEvent_Vendors(6, 4);
-a
-CALL IntoEvent_Venue(6, 1);
-CALL IntoEvent_Venue(2, 2);
-CALL IntoEvent_Venue(3, 3);
-CALL IntoEvent_Venue(4, 1);
-CALL IntoEvent_Venue(5, 2);
-
-
-
-CALL pay(
-    6,
-    '20000'::NUMERIC(10, 2),
-    '2026-09-05',
-    'Paid'
-);
-
-
-
-CALL pay(
-    2,
-    '5000'::NUMERIC(10, 2),
-    '2026-09-06',
-    'Paid'
-);
-
-CALL pay(
-    3,
-    '25000'::NUMERIC(10, 2),
-    '2026-09-03',
-    'Paid'
-);
-
-CALL pay(
-    4,
-    '40000'::NUMERIC(10, 2),
-    '2026-09-04',
-    'Paid'
-);
-
-CALL pay(
-    5,
-    '60000'::NUMERIC(10, 2),
-    '2026-09-06',
-    'Paid'
-);
-
-SELECT * 
-FROM search_vendors('%Catering%');
 
 CREATE VIEW frequent_used_venue AS
 SELECT
@@ -766,5 +561,4 @@ LEFT JOIN Venue v
     ON v.Venue_Id = ev.Venue_Id
 LEFT JOIN Payment p
     ON p.Event_Id = e.Event_Id;
-
 
